@@ -1,86 +1,185 @@
+<div align="center">
+
 # Private Key Input
 
-A temporary HTML input page for agent workflows. Your local handler uses the value; the agent receives only an outcome.
+**Give a local agent a credential without pasting it into chat.**
 
-[简体中文](README.zh-CN.md) · [Agent instructions](SKILL.md) · [Implementation](scripts/private_input.py)
+A short-lived HTML page hands the value to a task-specific local callback. The agent sees only the outcome and can continue the original task.
 
-## Why this exists
+[简体中文](README.zh-CN.md) · [Quick start](#quick-start) · [Ask your agent](#ask-your-agent) · [Security model](#security-model)
 
-When an agent needs a credential, pasting it into chat puts it into conversation history and potentially model context. This skill provides a smaller alternative: a short-lived page and a task-specific Python callback. No daemon, database, plugin, or credential platform is required.
+![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-1f6f5c) ![Standard library only](https://img.shields.io/badge/dependencies-standard_library_only-cb6d32) [![MIT License](https://img.shields.io/badge/license-MIT-244f73)](LICENSE)
+
+</div>
+
+## Why
+
+Credentials pasted into chat can enter conversation history and model context. Private Key Input gives agent workflows a smaller path:
 
 ```text
-User -> temporary page -> local callback -> authorized destination
-                              |
-                         outcome only -> agent continues
+You -> temporary page -> local callback -> authorized destination
+                            |
+                       outcome only -> agent continues
 ```
 
-This is not an OS sandbox or a password vault. The handler and destination necessarily receive plaintext. The workflow keeps that value out of agent-visible output only if the task wrapper also handles it correctly.
+- **One task, one page.** A random route expires after ten minutes by default and closes after one accepted submission.
+- **No credential platform.** The implementation uses only Python's standard library; there is no daemon, database, plugin, or new vault.
+- **Outcome-only continuation.** The callback consumes the value locally while the host receives `submitted`, `expired`, or `handler_failed`.
+- **Explicit network boundary.** Loopback is the default. Plaintext LAN access requires an explicit opt-in; TLS can be supplied by the caller.
 
-## Install as a skill
+> [!IMPORTANT]
+> This is not a password vault or an OS sandbox. The local callback and destination necessarily receive plaintext. Keeping the value out of agent-visible output also depends on the task wrapper not printing, returning, or logging it.
 
-Requires Python 3.9+ and a client supporting `SKILL.md` skills. No third-party Python packages are needed. Python execution has been exercised on macOS and Windows; client-specific discovery must be verified separately.
+<a id="quick-start"></a>
+## Quick start
 
-Clone this repository into your client's skill directory, or link a shared copy there. For example, with the default Hermes profile:
+### 1. Install as a skill
+
+Requires Python 3.9+ and a client that supports `SKILL.md` skills. No third-party Python package is required.
+
+For a default Hermes profile:
 
 ```bash
 git clone https://github.com/Loveacup/private-key-input.git ~/.hermes/skills/private-key-input
 python3 -B -m unittest discover -s ~/.hermes/skills/private-key-input/scripts -p 'test_*.py'
 ```
 
-The example requires an absent target directory. For other clients, use their actual supported skill location rather than assuming Hermes paths. Installation does not start a listener, store credentials, or change client settings.
+A successful check ends with:
 
-Ask your agent:
+```text
+Ran 6 tests
 
-> Use private-key-input for the credential required by this task. Resolve the destination first, provide a temporary page, keep the value out of chat and tool output, and continue automatically after submission using an existing host mechanism. Do not add a callback service or store the secret somewhere new without authorization.
+OK
+```
 
-## First run: safe smoke test
+The target directory must not already exist. Other clients should use their actual supported skill directory rather than copying the Hermes path. Installing the files does not start a listener, store a credential, or change client configuration.
 
-From the repository root:
+### 2. Try the discard-only demo
+
+Enter the directory installed above (use your actual checkout path if different):
 
 ```bash
-python3 -B -m unittest discover -s scripts -p 'test_*.py'
+cd ~/.hermes/skills/private-key-input
 python3 -B examples/discard_demo.py
 ```
 
-On Windows use `py -B` if `python3` is unavailable. The demo prints a loopback URL and waits for up to ten minutes. Open it in a browser on that machine and enter **test text only**. The callback discards the value; the final output is `Outcome: submitted`. No real credential is needed or appropriate for this demo.
+Windows users can run `py -B examples/discard_demo.py` when `python3` is unavailable.
 
-The page is currently in Simplified Chinese. It includes standard password-manager hints, not a tested 1Password integration.
+The command prints a loopback URL and waits for up to ten minutes. Open it in a browser on the same machine, enter **test text only**, and submit. The callback discards the value; the terminal finishes with:
 
-## Use in an authorized task
+```text
+Outcome: submitted
+```
 
-Import `InputServer` or `serve` from `scripts/private_input.py`. Supply a callback that uses the credential directly for the already-authorized destination and returns `None`. Do not return or print the value, request bodies, headers, response bodies, or raw exception details. Use timeouts and reject redirects for credential-bearing requests.
+Do not use a real credential in this demo.
 
-`serve(callback, purpose, **options)` prints the page URL, waits, then prints its outcome. `InputServer(callback, purpose, **options)` exposes `url` and `run()` for hosts that need to publish the link separately.
+<a id="ask-your-agent"></a>
+## Ask your agent
 
-### Link delivery and automatic continuation
+Once this repository is installed as a skill, use a request like:
 
-- A human must receive the URL **before** the waiting call blocks. A terminal can display flushed output; an agent tool may buffer it until the command exits. Verify the actual host behavior first.
-- For buffered tools, start the task-owned temporary process, obtain and deliver its URL, then wait through an existing host mechanism. Do not add a new service merely to resume the task.
-- Hermes can reuse its existing background-process completion notification. OMP short synchronous calls have been exercised with a delayed synthetic client; this does **not** prove human link delivery or long waits.
-- Return only a nonsecret outcome to the original conversation. Do not require a separate “done” message when native continuation works, and do not redirect results to a different conversation if the origin closes.
+> Use private-key-input for the credential required by this task. Resolve the authorized destination first, provide a temporary page, keep the value out of chat and tool output, and continue automatically after submission using an existing host mechanism. Do not add a callback service or store the secret somewhere new without authorization.
 
-### Options and outcomes
+The operational contract is in [`SKILL.md`](SKILL.md). It tells the agent when to use this flow, how to deliver the page, how to continue without a second “done” message, and when to prefer the host's protected credential vault.
 
-- Defaults: `host="127.0.0.1"`, `port=0` (random available port), `ttl=600` seconds.
-- Optional TLS: pass a configured `ssl.SSLContext` as `tls_context`, and a matching bare HTTPS `public_origin`.
-- LAN: specify the reachable `public_origin`. Without TLS, `allow_plain_lan=True` requires explicit informed consent: HTTP is plaintext, including on a private network. Loopback URLs do not work from a phone.
-- Lifecycle: one accepted submission ends the listener. Outcomes are `submitted`, `expired`, or `handler_failed`; a failed handler may have partially completed its operation, so inspect destination status before retrying.
+## Integrate it
 
-The helper validates the route, Host, Origin, and submission token, disables request access logging, and sends no-store headers. These measures are not a security audit or a guarantee against a compromised host. It does not guarantee memory zeroization, enforce callback deadlines, or replace protected browser-vault login flows.
+Import `InputServer` or `serve` from [`scripts/private_input.py`](scripts/private_input.py). Run this discard-only example from the repository root; for a real task, the wrapper supplies a callback for the already-authorized destination:
 
-## Verification scope
+```python
+import sys
+from pathlib import Path
 
-The six bundled tests cover normal submission, one-use closure, expiration, wrong origin/token/route, explicit LAN opt-in, and handler failure. Cross-device OMP experiments also exercised short synchronous continuation on macOS and Windows with independent loopback HTTP clients, followed by same-conversation report writing. Those host experiments are not reproduced by the bundled unit suite.
+sys.path.insert(0, str(Path("scripts").resolve()))
+from private_input import serve
 
-Not established: browser JavaScript/rendering end-to-end, human-facing URL delivery in each CLI, password-manager filling, real downstream authentication, LAN/TLS integration, long waits, background OMP wake-up, or recovery after session replacement. Windows closed-port probes must distinguish timeout/10035 from explicit refusal/10061; a one-second timeout was insufficient in the observed environment.
+
+def accept(secret):
+    return None  # Discard-only example; use test text.
+
+
+serve(accept, purpose="Demo: input is discarded; use test text only.")
+```
+
+For real tasks, use the destination's existing credential API and extend the callback rather than the generic page. The callback should return `None`. It must not print or return the value, request headers, response bodies, or raw exceptions. Credential-bearing network requests should set a timeout and reject redirects.
+
+### Host continuation
+
+`serve(...)` prints the URL, waits for the page, and then prints the outcome. `InputServer(...)` exposes `url` and `run()` when the host needs to deliver the link separately.
+
+- A terminal can normally show flushed output before the call finishes. Some agent tools buffer output until process exit; verify link delivery before depending on synchronous waiting.
+- A buffered host should start the task-owned temporary process, deliver its URL, and wait through an existing completion mechanism—not add a permanent callback service.
+- Return only the nonsecret outcome to the original conversation. Native continuation should not require the user to send a separate “done” message.
+
+<a id="security-model"></a>
+## Security model
+
+### What the helper does
+
+- Listens on `127.0.0.1` by default and selects an available port.
+- Uses random page and submission tokens.
+- Validates the route, `Host`, `Origin`, content type, body size, and submission token.
+- Sends no-store, no-referrer, CSP, frame-denial, and content-type protection headers.
+- Suppresses HTTP access logs and request-processing tracebacks.
+- Closes after one accepted submission, callback failure, or waiting expiry; the host owns process cancellation.
+
+### What the caller still owns
+
+- Delivering the URL to the human before waiting blocks.
+- Using the secret only for the already-authorized destination.
+- Preventing plaintext from reaching logs, shell arguments, source code, status files, or agent output.
+- Checking destination state before retrying `handler_failed`; the callback may have partially completed.
+- Using the host credential-vault flow for browser passwords, login forms, and 2FA when one is available.
+
+### LAN and TLS
+
+Loopback URLs work only on the machine running the server. For a different device, provide a reachable `public_origin`.
+
+- Prefer an existing trusted HTTPS route.
+- For TLS, pass an `ssl.SSLContext` as `tls_context` and a matching bare HTTPS `public_origin`.
+- Without TLS, `allow_plain_lan=True` is required. HTTP remains plaintext even on a private network and should be used only after informed consent.
+
+The page defaults to Simplified Chinese. The password field includes standard autofill hints, but 1Password integration has not been established. The page never auto-submits a password-manager-filled value.
+
+This is not a security audit and does not guarantee safety on a compromised host, memory zeroization, or hard callback deadlines. The default `ttl=600` is a waiting deadline, not a callback execution limit.
+
+<details>
+<summary>Options and outcomes</summary>
+
+`InputServer(callback, purpose, host="127.0.0.1", port=0, ttl=600, allow_plain_lan=False, tls_context=None, public_origin=None)`
+
+- `port=0`: select an available port.
+- `submitted`: the callback returned; this does not establish downstream authentication.
+- `expired`: the waiting deadline elapsed.
+- `handler_failed`: the callback raised; check for partial completion before retrying.
+
+</details>
+
+## Verification
+
+The repository's six tests cover:
+
+- HTML page retrieval and one-time submission;
+- expiry and listener closure;
+- wrong route, Origin, and token rejection;
+- explicit plaintext-LAN consent;
+- callback failure without reflecting the submitted value.
+
+The Python helper and short synchronous continuation were also exercised on macOS and Windows with independent loopback HTTP clients. That host experiment demonstrated same-conversation continuation after a synthetic submission; it is not part of the bundled unit suite.
+
+Not established: browser rendering/JavaScript end to end, human-facing link delivery in every CLI, password-manager filling, real downstream authentication, LAN/TLS integration, long waits, detached wake-up, or recovery after session replacement.
 
 ## Project layout
 
-- `SKILL.md`: portable agent workflow and boundaries.
-- `scripts/private_input.py`: Python standard-library HTTP helper.
-- `scripts/test_private_input.py`: six unit tests.
-- `examples/discard_demo.py`: runnable, test-text-only browser demo.
+```text
+.
+├── SKILL.md                     # Agent workflow and boundaries
+├── examples/discard_demo.py     # Test-text-only browser demo
+└── scripts/
+    ├── private_input.py         # Standard-library HTTP helper
+    └── test_private_input.py    # Six unit tests
+```
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE)
