@@ -51,7 +51,7 @@ python3 -B -m unittest discover -s ~/.hermes/skills/private-key-input/scripts -p
 检查成功时，结尾应为：
 
 ```text
-Ran 6 tests
+Ran 8 tests
 
 OK
 ```
@@ -143,6 +143,8 @@ serve(accept, purpose="Demo: input is discarded; use test text only.")
 - 使用 TLS 时，传入 `ssl.SSLContext` 作为 `tls_context`，并提供匹配的纯 HTTPS `public_origin`。
 - 没有 TLS 时必须显式设置 `allow_plain_lan=True`。即使在私有网络中，HTTP 仍是明文，只应在知情同意后使用。
 
+跨设备输入真实凭据时使用可信 HTTPS；LAN 明文演示只输入测试文字。页面 URL 本身也是临时访问凭证，只发到可信会话。
+
 页面默认简体中文。密码框带有标准自动填充提示，但尚未证实与 1Password 的联动；页面不会自动提交密码管理器填入的值。
 
 这不是安全审计，也不保证受入侵主机上的安全、内存清零或回调的硬超时。默认 `ttl=600` 是等待期限，不是回调执行期限。
@@ -161,7 +163,7 @@ serve(accept, purpose="Demo: input is discarded; use test text only.")
 
 ## 验证情况
 
-仓库中的 6 项测试覆盖：
+仓库中的 8 项测试覆盖：
 
 - HTML 页面获取与一次性提交；
 - 过期与监听关闭；
@@ -181,7 +183,7 @@ Python 辅助程序及短时同步续接还在 macOS 与 Windows 上，通过独
 ├── examples/discard_demo.py     # 仅用于测试文字的浏览器 Demo
 └── scripts/
     ├── private_input.py         # Python 标准库 HTTP 辅助程序
-    └── test_private_input.py    # 6 项单元测试
+    └── test_private_input.py    # 8 项单元测试
 ```
 
 ## 许可

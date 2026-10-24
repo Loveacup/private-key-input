@@ -1,5 +1,8 @@
 import importlib.util
 import json
+import socket
+import contextlib
+import io
 import threading
 import time
 import unittest
@@ -24,7 +27,8 @@ class PrivateInputTest(unittest.TestCase):
             with urllib.request.urlopen(request, timeout=2) as response:
                 return response.status, response.read().decode()
         except urllib.error.HTTPError as exc:
-            return exc.code, exc.read().decode()
+            with exc:
+                return exc.code, exc.read().decode()
 
     def test_page_and_one_time_submit(self):
         received = []
@@ -78,9 +82,48 @@ class PrivateInputTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             mod.InputServer(lambda value: None, "test", host="0.0.0.0", public_origin="http://192.0.2.1:8080")
 
+    def test_late_body_is_not_processed_after_deadline(self):
+        received = []
+        server = mod.InputServer(received.append, "test", ttl=0.3)
+        thread = threading.Thread(target=server.run, daemon=True)
+        thread.start()
+        conn = socket.create_connection(("127.0.0.1", server.server_port), timeout=2)
+        body = json.dumps({"secret": "synthetic-secret"}).encode()
+        headers = (f"POST {server.route} HTTP/1.1\r\nHost: {server.host_header}\r\n"
+                   f"Origin: {server.origin}\r\nX-Input-Token: {server.token}\r\n"
+                   f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n\r\n")
+        conn.sendall(headers.encode())
+        time.sleep(0.4)
+        try:
+            conn.sendall(body)
+        except OSError:
+            pass  # An already closed expired connection is expected.
+        conn.close()
+        thread.join(1)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(received, [])
+        self.assertEqual(server.outcome, "expired")
+
+    def test_partial_request_does_not_hold_server_past_deadline(self):
+        server = mod.InputServer(lambda value: None, "test", ttl=0.3)
+        thread = threading.Thread(target=server.run, daemon=True)
+        thread.start()
+        conn = socket.create_connection(("127.0.0.1", server.server_port), timeout=2)
+        conn.sendall(b"GET / HTTP/1.1\r\n")
+        thread.join(1)
+        conn.close()
+        thread.join(1)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(server.outcome, "expired")
+
     def test_callback_failure_closes_server(self):
         def fail(value):
-            raise RuntimeError("synthetic failure")
+            raise RuntimeError("synthetic-secret")
+        output = io.StringIO()
+        capture = contextlib.ExitStack()
+        capture.enter_context(contextlib.redirect_stdout(output))
+        capture.enter_context(contextlib.redirect_stderr(output))
+        self.addCleanup(capture.close)
         server, thread = self.start(fail)
         body = json.dumps({"secret": "synthetic-secret"}).encode()
         request = urllib.request.Request(server.url, data=body, method="POST", headers={
@@ -92,6 +135,8 @@ class PrivateInputTest(unittest.TestCase):
         self.assertEqual(status, 500)
         self.assertNotIn("synthetic-secret", response)
         self.assertEqual(server.outcome, "handler_failed")
+        capture.close()
+        self.assertNotIn("synthetic-secret", output.getvalue())
 
 
 if __name__ == "__main__":

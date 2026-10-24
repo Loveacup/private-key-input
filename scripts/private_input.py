@@ -2,6 +2,8 @@
 import html
 import json
 import secrets
+import socket
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlsplit
@@ -62,6 +64,21 @@ class Handler(BaseHTTPRequestHandler):
     def setup(self):
         super().setup()
         self.connection.settimeout(5)
+        # A socket timeout alone resets on each read; enforce an absolute deadline.
+        self.deadline_timer = threading.Timer(
+            max(0, self.server.deadline - time.monotonic()), self.expire_request)
+        self.deadline_timer.daemon = True
+        self.deadline_timer.start()
+
+    def expire_request(self):
+        try:
+            self.connection.shutdown(socket.SHUT_RD)
+        except OSError:
+            pass
+
+    def finish(self):
+        self.deadline_timer.cancel()
+        super().finish()
 
     def log_message(self, *args):
         pass
@@ -119,6 +136,10 @@ f.onsubmit=async e=>{e.preventDefault();b.disabled=true;let value=k.value;k.valu
                 raise ValueError()
         except Exception:
             return self.reply(400, "输入格式无效")
+        if time.monotonic() >= s.deadline:
+            s.outcome = "expired"
+            return self.reply(410, "输入页面已过期")
+        self.deadline_timer.cancel()
         s.outcome = "processing"
         try:
             s.callback(value)

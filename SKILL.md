@@ -1,7 +1,7 @@
 ---
 name: private-key-input
 description: Use when safely entering a secret outside chat.
-version: 1.0.0
+version: 1.0.1
 author: Hermes Agent
 license: MIT
 metadata:
@@ -51,6 +51,8 @@ serve(accept, purpose="Save the configured service API key")
 ## Language and password-manager hints
 
 Visible page text and submission feedback default to Simplified Chinese. The password field uses `name="password"` and `autocomplete="current-password"` as standard autofill hints, not a guarantee of 1Password support. Do not auto-submit a password-manager-filled value: the user reviews the purpose and clicks Submit. A generic LAN origin cannot select the correct service credential reliably, particularly when several services share that origin. Prefer manual selection in 1Password or the actual destination's supported vault flow; do not spoof another site's origin or claim tested integration from HTML hints alone. Telegram's in-app browser may not expose the extension; suggest an external supported browser. Never use a real credential to test a discard-only demo.
+
+Treat the page URL as a temporary access credential; deliver it only to a trusted conversation. For real cross-device credentials use trusted HTTPS; reserve plaintext LAN demos for synthetic text. The waiting deadline covers incomplete HTTP requests and is checked again before callback execution. Callback execution itself still needs destination-specific timeouts.
 
 ## Boundaries
 

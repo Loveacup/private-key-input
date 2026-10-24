@@ -51,7 +51,7 @@ python3 -B -m unittest discover -s ~/.hermes/skills/private-key-input/scripts -p
 A successful check ends with:
 
 ```text
-Ran 6 tests
+Ran 8 tests
 
 OK
 ```
@@ -143,6 +143,8 @@ Loopback URLs work only on the machine running the server. For a different devic
 - For TLS, pass an `ssl.SSLContext` as `tls_context` and a matching bare HTTPS `public_origin`.
 - Without TLS, `allow_plain_lan=True` is required. HTTP remains plaintext even on a private network and should be used only after informed consent.
 
+For real credentials on another device, use trusted HTTPS; reserve plaintext LAN demos for test text. Treat the page URL as a temporary access credential and share it only in a trusted conversation.
+
 The page defaults to Simplified Chinese. The password field includes standard autofill hints, but 1Password integration has not been established. The page never auto-submits a password-manager-filled value.
 
 This is not a security audit and does not guarantee safety on a compromised host, memory zeroization, or hard callback deadlines. The default `ttl=600` is a waiting deadline, not a callback execution limit.
@@ -161,7 +163,7 @@ This is not a security audit and does not guarantee safety on a compromised host
 
 ## Verification
 
-The repository's six tests cover:
+The repository's eight tests cover:
 
 - HTML page retrieval and one-time submission;
 - expiry and listener closure;
@@ -181,7 +183,7 @@ Not established: browser rendering/JavaScript end to end, human-facing link deli
 ├── examples/discard_demo.py     # Test-text-only browser demo
 └── scripts/
     ├── private_input.py         # Standard-library HTTP helper
-    └── test_private_input.py    # Six unit tests
+    └── test_private_input.py    # Eight unit tests
 ```
 
 ## License
