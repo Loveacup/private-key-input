@@ -12,6 +12,10 @@ A short-lived HTML page hands the value to a task-specific local callback. The a
 
 </div>
 
+![Private Key Input: temporary page, local callback, authorized destination, outcome-only agent continuation](assets/overview.svg)
+
+*Concept diagram, not a product screenshot. The handler receives plaintext; only the outcome returns to the agent.*
+
 ## Why
 
 Credentials pasted into chat can enter conversation history and model context. Private Key Input gives agent workflows a smaller path:

@@ -12,6 +12,10 @@
 
 </div>
 
+![Private Key Input: temporary page, local callback, authorized destination, outcome-only agent continuation](assets/overview.svg)
+
+*概念流程图，并非产品截图。本机回调接触明文，只有处理状态返回 Agent。*
+
 ## 为什么需要它
 
 把凭据贴进聊天，可能让它进入会话历史和模型上下文。Private Key Input 为 Agent 工作流提供一条更小的路径：

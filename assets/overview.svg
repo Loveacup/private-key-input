@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+<title id="title">Private Key Input</title>
+<desc id="desc">Concept diagram: a temporary page sends a credential to a local callback, which uses it at the authorized destination. Only an outcome returns to the agent. This is not a product screenshot or an isolation guarantee.</desc>
+<defs>
+ <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#c7d4c9"/></pattern>
+ <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#215b48"/></marker>
+</defs>
+<rect width="1200" height="600" rx="24" fill="#f6f3e9"/>
+<rect width="1200" height="600" rx="24" fill="url(#grid)" opacity=".55"/>
+<path d="M950 0H1200V600H1090Z" fill="#e5ecde" opacity=".7"/>
+<g font-family="Helvetica,Arial,sans-serif" fill="#183e33">
+ <text x="56" y="57" font-size="13" letter-spacing="3" font-weight="700">ONE TASK. ONE TEMPORARY PAGE.</text>
+ <text x="53" y="123" font-family="Georgia,serif" font-size="56">Private Key Input</text>
+ <text x="56" y="165" font-size="21">The credential goes to your handler. The outcome goes to your agent.</text>
+ <rect x="56" y="220" width="300" height="206" rx="16" fill="#fffdf6" stroke="#9fb4a5"/>
+ <path d="M56 260H356" stroke="#cad5c8"/>
+ <circle cx="76" cy="240" r="4" fill="#d48551"/><circle cx="91" cy="240" r="4" fill="#b8c8b5"/><circle cx="106" cy="240" r="4" fill="#b8c8b5"/>
+ <text x="132" y="245" font-size="12" fill="#536b5e">01 / TEMPORARY PAGE</text>
+ <text x="78" y="299" font-family="Georgia,serif" font-size="24">Enter once.</text>
+ <rect x="78" y="319" width="256" height="39" rx="7" fill="#eef1e7" stroke="#c8d2c3"/>
+ <text x="93" y="346" font-size="25" letter-spacing="6">********</text>
+ <rect x="78" y="373" width="256" height="30" rx="6" fill="#215b48"/>
+ <text x="178" y="394" fill="#fffdf6" font-size="13">Submit</text>
+ <path d="M369 324H439" stroke="#215b48" stroke-width="2" marker-end="url(#arrow)"/>
+ <text x="374" y="302" font-size="12">value</text>
+ <rect x="456" y="220" width="300" height="206" rx="16" fill="#215b48"/>
+ <text x="480" y="249" font-size="12" fill="#d2e5d5">02 / LOCAL CALLBACK</text>
+ <path d="M480 271H732" stroke="#688f7c"/>
+ <text x="480" y="311" font-family="Georgia,serif" font-size="24" fill="#fffdf6">Use it locally.</text>
+ <text x="480" y="349" font-family="Courier,monospace" font-size="18" fill="#d2e5d5">on_submit(secret)</text>
+ <text x="480" y="387" font-size="14" fill="#d2e5d5">Task-specific use / storage</text>
+ <path d="M770 324H840" stroke="#215b48" stroke-width="2" marker-end="url(#arrow)"/>
+ <text x="775" y="302" font-size="12">value</text>
+ <rect x="856" y="220" width="288" height="206" rx="16" fill="#fffdf6" stroke="#9fb4a5"/>
+ <text x="880" y="249" font-size="12">03 / AUTHORIZED DESTINATION</text>
+ <path d="M880 271H1120" stroke="#cad5c8"/>
+ <text x="880" y="311" font-family="Georgia,serif" font-size="24">Complete the task.</text>
+ <text x="880" y="349" font-size="16">Existing service or credential API</text>
+ <text x="880" y="387" font-size="14" fill="#536b5e">No new credential platform</text>
+ <path d="M606 426V488H853" fill="none" stroke="#215b48" stroke-width="2" marker-end="url(#arrow)"/>
+ <text x="627" y="477" font-size="13">outcome only</text>
+ <rect x="868" y="462" width="276" height="52" rx="10" fill="#dce8d6" stroke="#a2b999"/>
+ <text x="891" y="494" font-family="Courier,monospace" font-size="18">Agent: continue task</text>
+ <text x="56" y="490" font-size="15" font-weight="700">Python standard library</text>
+ <text x="56" y="515" font-size="14" fill="#536b5e">Loopback by default / one-use / 10 min TTL</text>
+ <path d="M56 545H1144" stroke="#c1cebe"/>
+ <text x="56" y="573" font-size="13" fill="#536b5e">CONCEPT DIAGRAM / The handler receives plaintext. Safe output depends on the wrapper. Not an OS sandbox.</text>
+</g>
+</svg>
